@@ -1,0 +1,17 @@
+[package]
+name = "advent-of-code-2023"
+license = "MIT"
+readme = "README.md"
+version = "0.1.0"
+authors = ["Andreas Runfalk <andreas@runfalk.se>"]
+edition = "2021"
+publish = false
+
+# Always optimize builds (we care about speed, not safety)
+[profile.dev]
+opt-level = 3
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+regex = "1.10"
