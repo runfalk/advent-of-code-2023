@@ -9,7 +9,7 @@ fn run_day<A, B>(day: usize, f: fn(&Path) -> Result<(A, Option<B>)>) -> Result<(
 fn test_day1() -> Result<()> {
     assert_eq!(
         run_day(1, advent_of_code_2023::day1::main)?,
-        (0, None),
+        (55090, Some(54845)),
     );
     Ok(())
 }
