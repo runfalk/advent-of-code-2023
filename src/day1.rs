@@ -39,7 +39,7 @@ fn find_calibration_value(line: &str, include_named: bool) -> Result<usize> {
     Ok(10 * first + second)
 }
 
-fn calibration_value_sum(lines: &Vec<String>, include_named: bool) -> Result<usize> {
+fn calibration_value_sum(lines: &[String], include_named: bool) -> Result<usize> {
     lines
         .iter()
         .map(|line| find_calibration_value(line, include_named))
@@ -73,7 +73,7 @@ mod test {
         let input = ["1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet"]
             .into_iter()
             .map(ToOwned::to_owned)
-            .collect();
+            .collect::<Vec<_>>();
         assert_eq!(calibration_value_sum(&input, false).unwrap(), 142);
     }
 
@@ -90,7 +90,7 @@ mod test {
         ]
         .into_iter()
         .map(ToOwned::to_owned)
-        .collect();
+        .collect::<Vec<_>>();
         assert_eq!(calibration_value_sum(&input, true).unwrap(), 281);
     }
 }
