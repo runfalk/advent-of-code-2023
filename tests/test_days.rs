@@ -40,3 +40,14 @@ fn test_day4() -> Result<()> {
     );
     Ok(())
 }
+
+// Needs to be ignored because my solution is slow :(
+#[test]
+#[ignore]
+fn test_day5() -> Result<()> {
+    assert_eq!(
+        run_day(5, advent_of_code_2023::day5::main)?,
+        (111_627_841, Some(69_323_688)),
+    );
+    Ok(())
+}
