@@ -28,7 +28,7 @@ struct RangeSet {
 
 impl RangeSet {
     fn new(ranges: &[Range]) -> Self {
-        let mut ranges = ranges.iter().cloned().collect::<Vec<_>>();
+        let mut ranges = ranges.to_vec();
         ranges.sort();
         Self { ranges }
     }
@@ -56,14 +56,13 @@ impl FromStr for Almanac {
         let mut temperature_to_humidity: Vec<Range> = Vec::new();
         let mut humidity_to_location: Vec<Range> = Vec::new();
         for group in s.split("\n\n") {
-            let Some((label, content)) = group.split_once(":") else {
+            let Some((label, content)) = group.split_once(':') else {
                 return Err(anyhow!("Unable to determine group label in alamac"));
             };
 
             match label {
                 "seeds" => {
                     seeds = content
-                        .trim_start()
                         .split_whitespace()
                         .map(|n| n.parse::<usize>())
                         .collect::<Result<_, _>>()?;
