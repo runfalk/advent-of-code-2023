@@ -63,7 +63,7 @@ impl Hand {
         // We only need to look at the first two values to determine the hand. If we have jokers we
         // we can simply add them to the most common card since that will always net us the best
         // hand
-        let a = sorted_card_counts.get(0).copied().unwrap_or(0) + num_jokers;
+        let a = sorted_card_counts.first().copied().unwrap_or(0) + num_jokers;
         let b = sorted_card_counts.get(1).copied().unwrap_or(0);
 
         match (a, b) {
