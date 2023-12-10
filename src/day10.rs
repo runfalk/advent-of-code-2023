@@ -1,249 +1,197 @@
 use anyhow::{anyhow, Result};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Coordinate {
+    x: isize,
+    y: isize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Direction {
+    North,
+    South,
+    West,
+    East,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Pipe {
-    NS,
-    WE,
-    NE,
-    NW,
-    SE,
-    SW,
+    NorthSouth,
+    WestEast,
+    NorthWest,
+    NorthEast,
+    SouthWest,
+    SouthEast,
+}
+
+impl Coordinate {
+    fn new(x: isize, y: isize) -> Self {
+        Self { x, y }
+    }
+
+    fn translate(&self, dir: Direction) -> Self {
+        match dir {
+            Direction::North => Self::new(self.x, self.y - 1),
+            Direction::South => Self::new(self.x, self.y + 1),
+            Direction::West => Self::new(self.x - 1, self.y),
+            Direction::East => Self::new(self.x + 1, self.y),
+        }
+    }
+}
+
+impl Direction {
+    fn iter() -> impl Iterator<Item = Self> {
+        [
+            Direction::North,
+            Direction::East,
+            Direction::South,
+            Direction::West,
+        ]
+        .into_iter()
+    }
 }
 
 impl Pipe {
-    fn exit(self, enter_from: (isize, isize), pipe_pos: (isize, isize)) -> Option<(isize, isize)> {
-        match (self, enter_from.0 - pipe_pos.0, enter_from.1 - pipe_pos.1) {
-            (Self::NS, 0, -1) => Some((pipe_pos.0, pipe_pos.1 + 1)),
-            (Self::NS, 0, 1) => Some((pipe_pos.0, pipe_pos.1 - 1)),
-            (Self::WE, -1, 0) => Some((pipe_pos.0 + 1, pipe_pos.1)),
-            (Self::WE, 1, 0) => Some((pipe_pos.0 - 1, pipe_pos.1)),
-            (Self::NE, 0, -1) => Some((pipe_pos.0 + 1, pipe_pos.1)),
-            (Self::NE, 1, 0) => Some((pipe_pos.0, pipe_pos.1 - 1)),
-            (Self::NW, 0, -1) => Some((pipe_pos.0 - 1, pipe_pos.1)),
-            (Self::NW, -1, 0) => Some((pipe_pos.0, pipe_pos.1 - 1)),
-            (Self::SE, 0, 1) => Some((pipe_pos.0 + 1, pipe_pos.1)),
-            (Self::SE, 1, 0) => Some((pipe_pos.0, pipe_pos.1 + 1)),
-            (Self::SW, 0, 1) => Some((pipe_pos.0 - 1, pipe_pos.1)),
-            (Self::SW, -1, 0) => Some((pipe_pos.0, pipe_pos.1 + 1)),
+    fn exit(&self, move_direction: Direction) -> Option<Direction> {
+        match (self, move_direction) {
+            (Self::NorthSouth, Direction::South) => Some(Direction::South),
+            (Self::NorthSouth, Direction::North) => Some(Direction::North),
+            (Self::WestEast, Direction::East) => Some(Direction::East),
+            (Self::WestEast, Direction::West) => Some(Direction::West),
+            (Self::NorthWest, Direction::South) => Some(Direction::West),
+            (Self::NorthWest, Direction::East) => Some(Direction::North),
+            (Self::NorthEast, Direction::South) => Some(Direction::East),
+            (Self::NorthEast, Direction::West) => Some(Direction::North),
+            (Self::SouthWest, Direction::North) => Some(Direction::West),
+            (Self::SouthWest, Direction::East) => Some(Direction::South),
+            (Self::SouthEast, Direction::North) => Some(Direction::East),
+            (Self::SouthEast, Direction::West) => Some(Direction::South),
             _ => None,
         }
     }
 }
 
-fn find_loop_path(
-    start: (isize, isize),
-    pipes: &HashMap<(isize, isize), Pipe>,
-) -> Option<Vec<(isize, isize)>> {
-    let mut pipes = pipes.clone();
-    for (start_pipe, enter_dx, enter_dy) in [
-        (Pipe::NS, 0, -1),
-        (Pipe::WE, -1, 0),
-        (Pipe::NE, 0, -1),
-        (Pipe::NW, 0, -1),
-        (Pipe::SE, 0, 1),
-        (Pipe::SW, 0, 1),
-    ] {
-        pipes.insert(start, start_pipe);
-
-        let mut enter_from = (start.0 + enter_dx, start.1 + enter_dy);
-        let mut pipe_pos = start;
-        let mut path = Vec::new();
-        while let Some(pipe) = pipes.get(&pipe_pos) {
-            if path.contains(&pipe_pos) {
-                return Some(path);
-            }
-            path.push(pipe_pos);
-
-            let Some(exit_to) = pipe.exit(enter_from, pipe_pos) else {
-                break;
-            };
-
-            enter_from = pipe_pos;
-            pipe_pos = exit_to;
+fn find_loop_path(start: Coordinate, pipes: &HashMap<Coordinate, Pipe>) -> Option<Vec<Coordinate>> {
+    let mut move_direction = pipes.get(&start).map(|p| match p {
+        Pipe::NorthSouth => Direction::South,
+        Pipe::WestEast => Direction::East,
+        Pipe::NorthWest => Direction::South,
+        Pipe::NorthEast => Direction::South,
+        Pipe::SouthWest => Direction::North,
+        Pipe::SouthEast => Direction::North,
+    })?;
+    let mut pos = start;
+    let mut path = Vec::new();
+    while let Some(pipe) = pipes.get(&pos) {
+        if path.contains(&pos) {
+            return Some(path);
         }
+        path.push(pos);
+
+        let Some(new_move_direction) = pipe.exit(move_direction) else {
+            break;
+        };
+
+        pos = pos.translate(new_move_direction);
+        move_direction = new_move_direction;
     }
     None
 }
 
-fn part_a(start: (isize, isize), pipes: &HashMap<(isize, isize), Pipe>) -> Result<usize> {
+fn part_a(start: Coordinate, pipes: &HashMap<Coordinate, Pipe>) -> Result<usize> {
     let path = find_loop_path(start, pipes).ok_or_else(|| anyhow!("Unable to find loop"))?;
     Ok(path.len() / 2)
 }
 
-fn part_b(start: (isize, isize), pipes: &HashMap<(isize, isize), Pipe>) -> Result<usize> {
+fn part_b(start: Coordinate, pipes: &HashMap<Coordinate, Pipe>) -> Result<usize> {
     let path = find_loop_path(start, pipes).ok_or_else(|| anyhow!("Unable to find loop"))?;
 
-    let mut left_of = HashSet::new();
-    let mut right_of = HashSet::new();
-    let iter_triplets = path
-        .iter()
-        .cycle()
-        .take(path.len() + 1)
-        .copied()
-        .zip(path.iter().cycle().skip(1).copied())
-        .zip(path.iter().cycle().skip(2).copied());
-    for ((enter_from, pipe_pos), exit_to) in iter_triplets {
-        let (enter_dx, enter_dy) = (enter_from.0 - pipe_pos.0, enter_from.1 - pipe_pos.1);
-        let (exit_dx, exit_dy) = (exit_to.0 - pipe_pos.0, exit_to.1 - pipe_pos.1);
-        match ((enter_dx, enter_dy), (exit_dx, exit_dy)) {
-            // North to south
-            ((0, -1), (0, 1)) => {
-                left_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-            }
-            // South to north
-            ((0, 1), (0, -1)) => {
-                left_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-            }
-            // West to east
-            ((-1, 0), (1, 0)) => {
-                left_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-            }
-            // East to west
-            ((1, 0), (-1, 0)) => {
-                left_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-            }
-            // North to west
-            ((0, -1), (-1, 0)) => {
-                left_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-                left_of.insert((pipe_pos.0 + 1, pipe_pos.1 + 1));
-                left_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-            }
-            // West to north
-            ((-1, 0), (0, -1)) => {
-                right_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 + 1, pipe_pos.1 + 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-            }
-            // North to east
-            ((0, -1), (1, 0)) => {
-                right_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 - 1, pipe_pos.1 + 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-            }
-            // East to north
-            ((1, 0), (0, -1)) => {
-                left_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-                left_of.insert((pipe_pos.0 - 1, pipe_pos.1 + 1));
-                left_of.insert((pipe_pos.0, pipe_pos.1 + 1));
-            }
-            // South to west
-            ((0, 1), (-1, 0)) => {
-                right_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 + 1, pipe_pos.1 - 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-            }
-            // West to south
-            ((-1, 0), (0, 1)) => {
-                left_of.insert((pipe_pos.0 + 1, pipe_pos.1));
-                left_of.insert((pipe_pos.0 + 1, pipe_pos.1 - 1));
-                left_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-            }
-            // South to east
-            ((0, 1), (1, 0)) => {
-                left_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-                left_of.insert((pipe_pos.0 - 1, pipe_pos.1 - 1));
-                left_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-            }
-            // East to south
-            ((1, 0), (0, 1)) => {
-                right_of.insert((pipe_pos.0 - 1, pipe_pos.1));
-                right_of.insert((pipe_pos.0 - 1, pipe_pos.1 - 1));
-                right_of.insert((pipe_pos.0, pipe_pos.1 - 1));
-            }
-            _ => unreachable!(),
-        }
-    }
+    // Pipes that flip whether or not we are inside the enclosed loop
+    let special_pipes = [Pipe::NorthSouth, Pipe::NorthEast, Pipe::NorthWest];
 
-    // Find the bounding box of all pipes
-    let min_x = *path.iter().map(|(x, _)| x).min().unwrap();
-    let max_x = *path.iter().map(|(x, _)| x).max().unwrap();
-    let min_y = *path.iter().map(|(_, y)| y).min().unwrap();
-    let max_y = *path.iter().map(|(_, y)| y).max().unwrap();
+    let min_x = path.iter().map(|c| c.x).min().unwrap();
+    let max_x = path.iter().map(|c| c.x).max().unwrap();
+    let min_y = path.iter().map(|c| c.y).min().unwrap();
+    let max_y = path.iter().map(|c| c.y).max().unwrap();
 
-    // Construct a set of bordering cells so can figure out whether the left or right set is
-    // outside of the loop
-    let mut border = HashSet::new();
-    border.extend((min_x - 1..=max_x + 1).map(move |x| (x, min_y - 1))); // Top
-    border.extend((min_x - 1..=max_x + 1).map(move |x| (x, max_y + 1))); // Bottom
-    border.extend((min_y - 1..=max_y + 1).map(move |y| (min_x - 1, y))); // Left
-    border.extend((min_y - 1..=max_y + 1).map(move |y| (max_x + 1, y))); // Right
-
-    let mut to_fill = if left_of.is_disjoint(&border) {
-        left_of
-    } else {
-        right_of
-    };
-
-    // Perform flood fill
-    to_fill.retain(|pos| !path.contains(pos));
-
-    let mut to_visit = to_fill.into_iter().collect::<Vec<_>>();
-    let mut enclosed_tiles = HashSet::new();
-    while let Some(tile) = to_visit.pop() {
-        if !enclosed_tiles.insert(tile) {
-            continue;
-        }
-        for n in [
-            (tile.0, tile.1 - 1),
-            (tile.0 + 1, tile.1),
-            (tile.0, tile.1 + 1),
-            (tile.0 - 1, tile.1),
-        ] {
-            if path.contains(&n) {
+    let mut num_inside = 0;
+    for y in min_y..=max_y {
+        let mut is_inside = false;
+        for x in min_x..=max_x {
+            let c = Coordinate::new(x, y);
+            if !path.contains(&c) {
+                if is_inside {
+                    num_inside += 1;
+                }
                 continue;
             }
-            to_visit.push(n);
+
+            // Should be safe since a pipe should always be on the loop path
+            let pipe = pipes.get(&c).copied().unwrap();
+            if special_pipes.contains(&pipe) {
+                is_inside = !is_inside;
+            }
         }
     }
-
-    Ok(enclosed_tiles.len())
+    Ok(num_inside)
 }
 
-#[allow(clippy::type_complexity)]
-fn parse_pipes(s: &str) -> Result<((isize, isize), HashMap<(isize, isize), Pipe>)> {
+fn parse_pipes(s: &str) -> Result<(Coordinate, HashMap<Coordinate, Pipe>)> {
     let mut start = None;
     let mut pipes = HashMap::new();
     for (y, line) in s.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
-            let p = (x as isize, y as isize);
-            match c {
-                '|' => {
-                    pipes.insert(p, Pipe::NS);
+            let p = Coordinate::new(x as isize, y as isize);
+            let pipe = match c {
+                '|' => Pipe::NorthSouth,
+                '-' => Pipe::WestEast,
+                'L' => Pipe::NorthEast,
+                'J' => Pipe::NorthWest,
+                'F' => Pipe::SouthEast,
+                '7' => Pipe::SouthWest,
+                '.' => {
+                    continue;
                 }
-                '-' => {
-                    pipes.insert(p, Pipe::WE);
-                }
-                'L' => {
-                    pipes.insert(p, Pipe::NE);
-                }
-                'J' => {
-                    pipes.insert(p, Pipe::NW);
-                }
-                'F' => {
-                    pipes.insert(p, Pipe::SE);
-                }
-                '7' => {
-                    pipes.insert(p, Pipe::SW);
-                }
-                '.' => {}
                 'S' => {
                     start = Some(p);
+                    continue;
                 }
                 _ => {
                     return Err(anyhow!("Unknown tile {:?}", c));
                 }
-            }
+            };
+            pipes.insert(p, pipe);
         }
     }
 
+    // Determine type of the start pipe
     let start = start.ok_or_else(|| anyhow!("No starting position found"))?;
-    Ok((start, pipes))
+    for start_pipe in [
+        Pipe::NorthSouth,
+        Pipe::WestEast,
+        Pipe::NorthWest,
+        Pipe::NorthEast,
+        Pipe::SouthWest,
+        Pipe::SouthEast,
+    ] {
+        let is_valid_start_pipe = Direction::iter()
+            .filter_map(|d| start_pipe.exit(d))
+            .all(|d| {
+                pipes
+                    .get(&start.translate(d))
+                    .and_then(|p| p.exit(d))
+                    .is_some()
+            });
+        if is_valid_start_pipe {
+            pipes.insert(start, start_pipe);
+            return Ok((start, pipes));
+        }
+    }
+    Err(anyhow!(
+        "Failed to determine pipe type for the starting position"
+    ))
 }
 
 pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
@@ -256,11 +204,23 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
-    const EXAMPLE_1_A: &'static str =
-        concat!(".....\n", ".S-7.\n", ".|.|.\n", ".L-J.\n", ".....\n",);
+    #[rustfmt::skip]
+    const EXAMPLE_1_A: &'static str = concat!(
+        ".....\n",
+        ".S-7.\n",
+        ".|.|.\n",
+        ".L-J.\n",
+        ".....\n",
+    );
 
-    const EXAMPLE_1_B: &'static str =
-        concat!("..F7.\n", ".FJ|.\n", "SJ.L7\n", "|F--J\n", "LJ...\n",);
+    #[rustfmt::skip]
+    const EXAMPLE_1_B: &'static str = concat!(
+        "..F7.\n",
+        ".FJ|.\n",
+        "SJ.L7\n",
+        "|F--J\n",
+        "LJ...\n",
+    );
 
     const EXAMPLE_2_A: &'static str = concat!(
         "...........\n",
