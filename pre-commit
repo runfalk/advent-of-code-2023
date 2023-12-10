@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Cargo format"
+cargo fmt --check
+
+echo "Clippy"
+cargo clippy -- --deny warnings
