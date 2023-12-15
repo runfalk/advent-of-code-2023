@@ -2,31 +2,20 @@ use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::path::Path;
 
-struct Lens {
-    label: String,
-    focal_len: usize,
-}
-
-fn hash(s: &str) -> usize {
-    let mut v = 0;
-    for b in s.bytes().map(usize::from) {
-        v += b;
-        v *= 17;
-        v %= 256;
-    }
-    v
+fn hash(s: &str) -> u8 {
+    s.bytes().fold(0, |h, b| h.wrapping_add(b).wrapping_mul(17))
 }
 
 fn part_a<'a>(lenses: impl Iterator<Item = &'a str>) -> usize {
-    lenses.map(hash).sum()
+    lenses.map(hash).map(usize::from).sum()
 }
 
 fn part_b<'a>(lenses: impl Iterator<Item = &'a str>) -> Result<usize> {
-    let mut boxes = HashMap::<usize, Vec<Lens>>::new();
+    let mut boxes = HashMap::<u8, Vec<(&str, usize)>>::new();
     for lens_str in lenses {
         if let Some(label) = lens_str.strip_suffix('-') {
             let lens_box = boxes.entry(hash(label)).or_default();
-            let Some(i) = lens_box.iter().position(|l| l.label == label) else {
+            let Some(i) = lens_box.iter().position(|&(l, _)| l == label) else {
                 continue;
             };
             lens_box.remove(i);
@@ -34,24 +23,21 @@ fn part_b<'a>(lenses: impl Iterator<Item = &'a str>) -> Result<usize> {
             let (label, focal_len_str) = lens_str
                 .split_once('=')
                 .ok_or_else(|| anyhow!("Invalid lens {:?}", lens_str))?;
-            let lens = Lens {
-                label: label.to_string(),
-                focal_len: focal_len_str.parse()?,
-            };
+            let focal_len = focal_len_str.parse()?;
 
             let lens_box = boxes.entry(hash(label)).or_default();
-            let Some(i) = lens_box.iter().position(|l| l.label == lens.label) else {
-                lens_box.push(lens);
+            let Some(i) = lens_box.iter().position(|&(l, _)| l == label) else {
+                lens_box.push((label, focal_len));
                 continue;
             };
-            lens_box[i] = lens;
+            lens_box[i] = (label, focal_len);
         }
     }
 
     let mut focusing_power = 0;
     for (box_number, lens_box) in boxes.into_iter() {
-        for (i, lens) in lens_box.into_iter().enumerate() {
-            focusing_power += (box_number + 1) * (i + 1) * lens.focal_len;
+        for (i, (_, focal_len)) in lens_box.into_iter().enumerate() {
+            focusing_power += (usize::from(box_number) + 1) * (i + 1) * focal_len;
         }
     }
     Ok(focusing_power)
