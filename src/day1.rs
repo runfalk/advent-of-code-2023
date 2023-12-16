@@ -62,6 +62,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(1, 55090, 54845);
+
     #[test]
     fn test_edge_cases() {
         assert_eq!(find_calibration_value("eighthree", true).unwrap(), 83);

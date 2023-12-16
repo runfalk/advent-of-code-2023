@@ -91,6 +91,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(4, 28_750, 10_212_704);
+
     fn example_input() -> Vec<Card> {
         [
             "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53",

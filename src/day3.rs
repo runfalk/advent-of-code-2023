@@ -122,6 +122,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(3, 557_705, 84_266_818);
+
     fn example_schematic() -> Schematic {
         let raw_schematic = [
             "467..114..",

@@ -180,6 +180,14 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    // Needs to be ignored because my solution is slow :(
+    test_real_input!(
+        #[ignore]
+        5,
+        111_627_841,
+        69_323_688
+    );
+
     const EXAMPLE_INPUT: &'static str = concat!(
         "seeds: 79 14 55 13\n",
         "\n",

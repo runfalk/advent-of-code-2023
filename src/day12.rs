@@ -133,6 +133,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(12, 7670, 157_383_940_585_037);
+
     fn example_input() -> Vec<Record> {
         [
             parse_record("???.### 1,1,3").unwrap(),

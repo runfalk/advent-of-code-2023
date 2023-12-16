@@ -130,6 +130,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(7, 250_946_742, 251_824_095);
+
     #[test]
     fn test_hand_tier() {
         assert_eq!(parse_hand_with_bid("2468T 0").unwrap().0.tier(), 0);

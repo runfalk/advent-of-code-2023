@@ -72,6 +72,8 @@ pub fn main(path: &Path) -> Result<(isize, Option<isize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(9, 1_731_106_378, 1087);
+
     const A: &'static [isize] = &[0, 3, 6, 9, 12, 15];
     const B: &'static [isize] = &[1, 3, 6, 10, 15, 21];
     const C: &'static [isize] = &[10, 13, 16, 21, 30, 45];

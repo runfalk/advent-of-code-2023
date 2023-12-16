@@ -141,6 +141,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(13, 41_859, 30_842);
+
     fn example_input() -> Vec<Note> {
         parse_notes(concat!(
             "#.##..##.\n",

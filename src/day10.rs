@@ -204,6 +204,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(10, 6757, 523);
+
     #[rustfmt::skip]
     const EXAMPLE_1_A: &'static str = concat!(
         ".....\n",

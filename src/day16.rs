@@ -198,6 +198,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(16, 8539, 8674);
+
     const EXAMPLE_INPUT: &'static str = concat!(
         ".|...\\....\n",
         "|.-.\\.....\n",

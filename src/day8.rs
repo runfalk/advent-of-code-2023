@@ -125,6 +125,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(8, 13_771, 13_129_439_557_681);
+
     #[test]
     fn test_part_a() {
         let input = concat!(

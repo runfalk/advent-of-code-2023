@@ -64,6 +64,8 @@ pub fn main(path: &Path) -> Result<(usize, Option<usize>)> {
 mod test {
     use super::*;
 
+    test_real_input!(6, 1_710_720, 35_349_468);
+
     const EXAMPLE_INPUT: &'static str =
         concat!("Time:      7  15   30\n", "Distance:  9  40  200\n",);
 
