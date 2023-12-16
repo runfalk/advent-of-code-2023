@@ -141,3 +141,12 @@ fn test_day15() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_day16() -> Result<()> {
+    assert_eq!(
+        run_day(16, advent_of_code_2023::day16::main)?,
+        (8539, Some(8674)),
+    );
+    Ok(())
+}
